@@ -1,7 +1,7 @@
 require("dotenv").config();
 const SftpClient = require("ssh2-sftp-client");
 const express = require("express");
-const { readFileSync, writeFileSync } = require("fs");
+const { readFileSync, writeFileSync, createReadStream } = require("fs");
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -104,10 +104,10 @@ app.post("/final", (req, res) => {
   lines[parsedDatesInfo.index] = parsedDatesInfo.moddedLine;
   lines[parsedMondaysInfo.index] = parsedMondaysInfo.moddedLine;
 
+  writeFileSync("./downloads/modpicker.js", lines.join("\n"));
 
-  writeFileSync('./downloads/modpicker.js', lines.join('\n'));
-
-  console.log(lines);
+  sftp.fastPut("./downloads/modpicker.js", process.env.REMOTE_FILE);
+  sftp.fastPut("./downloads/testpicker.js", process.env.REMOTE_FILE_BACKUP);
 
   res.render("final", { dates, datesMonday });
 });
