@@ -17,7 +17,7 @@ const sftpConfig = {
   host: process.env.SFTP_HOSTNAME,
   port: 22, // Default SFTP port
   username: process.env.SFTP_USERNAME,
-  privateKey: readFileSync("C:/Users/Li Yong/.ssh/id_ed25519"), // Use this for key-based authentication
+  privateKey: readFileSync(process.env.SSH_KEY_PATH), // Use this for key-based authentication
   passphrase: process.env.SSH_PASSPHRASE,
   //   debug: console.log,
   tryKeyboard: true,
