@@ -54,7 +54,6 @@ app.get("/connect", async (req, res) => {
   // Extract the array
   const matchingFilterDates = matchingLine.match(/\[.*?\]/)[0];
   const filteredDates = eval(matchingFilterDates);
-
   res.render("success", { sftp, filteredDates });
 });
 
