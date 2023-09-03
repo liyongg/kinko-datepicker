@@ -61,7 +61,7 @@ app.get("/connect", async (req, res) => {
   }
 
   const result = await sftp.fastGet(
-    "./webspace/httpdocs/kinko.nl/wp-content/themes/Avada-Child-Theme/testpicker.js",
+    process.env.REMOTE_FILE,
     "./downloads/testpicker.js"
   );
 
@@ -74,14 +74,22 @@ app.get("/connect", async (req, res) => {
   ).evaluation;
   const addedMondays = findAndParseLine(lines, /const extraDatums/).evaluation;
 
-  res.render("success", { sftp, filteredDates, addedMondays });
+  await sftp.end();
+  console.log("SFTP connection intentionally broken.");
+  res.render("success", { filteredDates, addedMondays });
 });
 
 app.get("/", (req, res) => {
   res.render("home");
 });
 
-app.post("/final", (req, res) => {
+app.post("/final", async (req, res) => {
+  const { isConnected } = await connect();
+
+  if (!isConnected) {
+    res.render("error");
+  }
+
   const { dates, datesMonday } = req.body;
 
   const parsedDates = dates.split(",").map((date) => date.trim());
@@ -106,9 +114,14 @@ app.post("/final", (req, res) => {
 
   writeFileSync("./downloads/modpicker.js", lines.join("\n"));
 
-  sftp.fastPut("./downloads/modpicker.js", process.env.REMOTE_FILE);
-  sftp.fastPut("./downloads/testpicker.js", process.env.REMOTE_FILE_BACKUP);
+  await sftp.fastPut("./downloads/modpicker.js", process.env.REMOTE_FILE);
+  await sftp.fastPut(
+    "./downloads/testpicker.js",
+    process.env.REMOTE_FILE_BACKUP
+  );
 
+  await sftp.end();
+  console.log("SFTP connection intentionally broken");
   res.render("final", { dates, datesMonday });
 });
 
