@@ -51,12 +51,11 @@ app.get("/connect", async (req, res) => {
   const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
   const lines = dateFile.split("\n");
   const matchingLine = lines.find((line) => line.match(/const filterDatums/));
-  console.log(typeof(matchingLine));
-  const matchingFilterDates = matchingLine.match(/\[(.*?)\]/)
-//   const testings = eval(matchingLine);
-  console.log(matchingFilterDates);
+  // Extract the array
+  const matchingFilterDates = matchingLine.match(/\[.*?\]/)[0];
+  const filteredDates = eval(matchingFilterDates);
 
-  res.render("success", { sftp });
+  res.render("success", { sftp, filteredDates });
 });
 
 app.get("/", (req, res) => {
