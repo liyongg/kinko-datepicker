@@ -24,17 +24,28 @@
     <% } %>
 
     <p>Kies hier de dagen die toegevoegd moeten worden</p>
-    <input
-      type="text"
-      id="basicDate"
-      placeholder="Please select Date Time"
-      data-input
-    />
+    <form action="/final" method="post">
+      <label for="dates"></label>
+      <input
+        name="dates"
+        size="4"
+        type="text"
+        id="basicDate"
+        placeholder="Please select Date Time"
+        data-input
+      />
+      <button type="submit">Click me!</button>
+    </form>
+
+    <p>Geselecteerde dagen:</p>
+    <ul id="selectedDates">
+
+    </ul>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.2.3/flatpickr.js"></script>
 
-    <div id="preloadedDates" data-test=<%= filteredDates %>></div>
+    <div id="preloadedDates" data-test=<%=filteredDates %>></div>
 
     <script>
       const preloadedDates =
@@ -44,8 +55,25 @@
         mode: "multiple",
         dateFormat: "Y-m-d",
         altInput: true,
-        altFormat: "l j F, Y",
+        altFormat: "l j F, Y\n",
         defaultDate: preloadedDates,
+        onClose: function (selectedDates, dateStr, instance) {
+          const selectedDatesList = document.getElementById("selectedDates");
+          selectedDatesList.innerHTML = "";
+
+          selectedDates.forEach(function (date) {
+            const listItem = document.createElement("li");
+            listItem.textContent = date.toLocaleDateString(
+              "nl-NL",
+              {weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric"
+            }
+            );
+            selectedDatesList.appendChild(listItem)
+          })
+        },
       });
     </script>
   </body>

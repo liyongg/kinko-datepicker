@@ -6,6 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.set("view engine", "ejs");
+app.use(express.urlencoded({ extended: true }));
 
 const sftp = new SftpClient({
   //   debug: true,
@@ -59,6 +60,11 @@ app.get("/connect", async (req, res) => {
 
 app.get("/", (req, res) => {
   res.render("home");
+});
+
+app.post("/final", (req, res) => {
+  // console.log(req);
+  res.send(req.body);
 });
 
 app.listen(port, () => {
