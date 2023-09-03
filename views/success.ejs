@@ -16,16 +16,18 @@
   </head>
   <body>
     <h1>Verbinding is tot stand gekomen!</h1>
-    <p>Aantal dagen die nu uitstaan: <%= filteredDates.length %></p>
+    <!-- <p>Aantal dagen die nu uitstaan: <%= filteredDates.length %></p>
     <% for (date of filteredDates ) { %>
     <ul>
       <li><%= date %></li>
     </ul>
-    <% } %>
+    <% } %> -->
 
     <form action="/final" method="post">
       <label for="dates">
-        <p>Kies hier de dagen (niet maandag) die <b>uitgezet</b> moeten worden</p></label
+        <p>
+          Kies hier de dagen (niet maandag) die <b>uitgezet</b> moeten worden
+        </p></label
       >
       <input
         name="dates"
@@ -35,14 +37,12 @@
         placeholder="Dagen om uit te zetten..."
         data-input
       />
-            <label for="datesMonday">
-          <p>Geselecteerde uitgezette dagen:</p>
-    <ul id="selectedDates"></ul>
+      <label for="datesMonday">
+        <p>Geselecteerde uitgezette dagen:</p>
+        <ul id="selectedDates"></ul>
 
         <p>Kies hier de maandagen die <b>aangezet</b> moeten worden</p></label
       >
-
-
 
       <input
         name="datesMonday"
@@ -53,21 +53,41 @@
         data-input
       />
 
-          <p>Geselecteerde maandagen die aangezet moeten worden:</p>
-    <ul id="selectedDatesMonday"></ul>
+      <p>Geselecteerde maandagen die aangezet moeten worden:</p>
+      <ul id="selectedDatesMonday"></ul>
       <button type="submit">Click me!</button>
     </form>
-
-
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.2.3/flatpickr.js"></script>
 
-    <div id="preloadedDates" data-test=<%filteredDates %>></div>
-
     <script>
-      const preloadedDates =
-        document.getElementById("preloadedDates").dataset.test;
+      const preloadedDates = JSON.stringify("<%- filteredDates %>")
+        .split(",")
+        .map((str) => str.trim());
+
+      const preloadedMondays = JSON.stringify("<%- addedMondays %>")
+        .split(",")
+        .map((str) => str.trim());
+
+      const showDates = (pattern) => {
+        function foo(selectedDates, dateStr, instance, pattern) {
+          const selectedDatesList = document.getElementById(pattern);
+          selectedDatesList.innerHTML = "";
+
+          selectedDates.forEach(function (date) {
+            const listItem = document.createElement("li");
+            listItem.textContent = date.toLocaleDateString("nl-NL", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+            selectedDatesList.appendChild(listItem);
+          });
+        }
+      };
+
       $("#basicDate").flatpickr({
         enableTime: false,
         mode: "multiple",
@@ -78,13 +98,28 @@
           },
         ],
         locale: {
-        "firstDayOfWeek": 1 // start week on Monday
+          firstDayOfWeek: 1, // start week on Monday
         },
         dateFormat: "Y-m-d",
         altInput: true,
         altFormat: "l j F, Y",
         defaultDate: preloadedDates,
         onClose: function (selectedDates, dateStr, instance) {
+          const selectedDatesList = document.getElementById("selectedDates");
+          selectedDatesList.innerHTML = "";
+
+          selectedDates.forEach(function (date) {
+            const listItem = document.createElement("li");
+            listItem.textContent = date.toLocaleDateString("nl-NL", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+            selectedDatesList.appendChild(listItem);
+          });
+        },
+        onReady: function (selectedDates, dateStr, instance) {
           const selectedDatesList = document.getElementById("selectedDates");
           selectedDatesList.innerHTML = "";
 
@@ -111,14 +146,33 @@
           },
         ],
         locale: {
-        "firstDayOfWeek": 1 // start week on Monday
+          firstDayOfWeek: 1, // start week on Monday
         },
         dateFormat: "Y-m-d",
         altInput: true,
         altFormat: "l j F, Y",
-        defaultDate: preloadedDates,
+        defaultDate: preloadedMondays,
         onClose: function (selectedDates, dateStr, instance) {
-          const selectedDatesList = document.getElementById("selectedDatesMonday");
+          const selectedDatesList = document.getElementById(
+            "selectedDatesMonday"
+          );
+          selectedDatesList.innerHTML = "";
+
+          selectedDates.forEach(function (date) {
+            const listItem = document.createElement("li");
+            listItem.textContent = date.toLocaleDateString("nl-NL", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+            selectedDatesList.appendChild(listItem);
+          });
+        },
+        onReady: function (selectedDates, dateStr, instance) {
+          const selectedDatesList = document.getElementById(
+            "selectedDatesMonday"
+          );
           selectedDatesList.innerHTML = "";
 
           selectedDates.forEach(function (date) {
