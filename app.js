@@ -13,7 +13,6 @@ const sftp = new SftpClient({
 
 const sftpConfig = {
   protocol: "sftp",
-  //   host: process.env.SFTP_HOSTNAME,
   host: process.env.SFTP_HOSTNAME,
   port: 22, // Default SFTP port
   username: process.env.SFTP_USERNAME,
@@ -28,22 +27,40 @@ const sftpConfig = {
 async function connect() {
   try {
     console.log("Trying to connect to SFTP server...");
-    await sftp.connect(sftpConfig);
+    const sftpConnection = await sftp.connect(sftpConfig);
     console.log("Connected to SFTP server");
-    return true;
+    return { isConnected: true, client: sftpConnection };
   } catch (error) {
     console.error("Error:", error.message);
-    return false;
+    return { isConnected: false, client: null };
   }
 }
 
-app.get("/", async (req, res) => {
-  const isConnected = await connect();
-  if (isConnected) {
-    res.render("home");
-  } else {
+app.get("/connect", async (req, res) => {
+  const { isConnected } = await connect();
+
+  if (!isConnected) {
     res.render("error");
   }
+
+  const result = await sftp.fastGet(
+    "./webspace/httpdocs/kinko.nl/wp-content/themes/Avada-Child-Theme/testpicker.js",
+    "./downloads/testpicker.js"
+  );
+
+  const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
+  const lines = dateFile.split("\n");
+  const matchingLine = lines.find((line) => line.match(/const filterDatums/));
+  console.log(typeof(matchingLine));
+  const matchingFilterDates = matchingLine.match(/\[(.*?)\]/)
+//   const testings = eval(matchingLine);
+  console.log(matchingFilterDates);
+
+  res.render("success", { sftp });
+});
+
+app.get("/", (req, res) => {
+  res.render("home");
 });
 
 app.listen(port, () => {
