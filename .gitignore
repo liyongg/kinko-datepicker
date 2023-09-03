@@ -1,3 +1,6 @@
+# Personal .gitignores
+downloads/*
+
 # Logs
 logs
 *.log
