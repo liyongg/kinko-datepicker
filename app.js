@@ -1,7 +1,7 @@
 require("dotenv").config();
 const SftpClient = require("ssh2-sftp-client");
 const express = require("express");
-const { readFileSync } = require("fs");
+const { readFileSync, writeFileSync } = require("fs");
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -37,6 +37,22 @@ async function connect() {
   }
 }
 
+const findAndParseLine = function (lines, pattern, replacement = "ph") {
+  const matchingLine = lines.find((line) => line.match(pattern));
+  const matchingDates = matchingLine.match(/\[.*?\]/)[0];
+  const index = lines.indexOf(matchingLine);
+  const moddedLine = matchingLine.replace(
+    /\[.*?\]/,
+    JSON.stringify(replacement)
+  );
+  return {
+    evaluation: eval(matchingDates),
+    index,
+    line: matchingLine,
+    moddedLine,
+  };
+};
+
 app.get("/connect", async (req, res) => {
   const { isConnected } = await connect();
 
@@ -51,11 +67,14 @@ app.get("/connect", async (req, res) => {
 
   const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
   const lines = dateFile.split("\n");
-  const matchingLine = lines.find((line) => line.match(/const filterDatums/));
-  // Extract the array
-  const matchingFilterDates = matchingLine.match(/\[.*?\]/)[0];
-  const filteredDates = eval(matchingFilterDates);
-  res.render("success", { sftp, filteredDates });
+
+  const filteredDates = findAndParseLine(
+    lines,
+    /const filterDatums/
+  ).evaluation;
+  const addedMondays = findAndParseLine(lines, /const extraDatums/).evaluation;
+
+  res.render("success", { sftp, filteredDates, addedMondays });
 });
 
 app.get("/", (req, res) => {
@@ -63,8 +82,34 @@ app.get("/", (req, res) => {
 });
 
 app.post("/final", (req, res) => {
-  // console.log(req);
-  res.send(req.body);
+  const { dates, datesMonday } = req.body;
+
+  const parsedDates = dates.split(",").map((date) => date.trim());
+  const parsedMondays = datesMonday.split(",").map((date) => date.trim());
+
+  const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
+  const lines = dateFile.split("\n");
+
+  const parsedDatesInfo = findAndParseLine(
+    lines,
+    (pattern = /const filterDatums/),
+    (replacement = parsedDates)
+  );
+  const parsedMondaysInfo = findAndParseLine(
+    lines,
+    (pattern = /const extraDatums/),
+    (replacement = parsedMondays)
+  );
+
+  lines[parsedDatesInfo.index] = parsedDatesInfo.moddedLine;
+  lines[parsedMondaysInfo.index] = parsedMondaysInfo.moddedLine;
+
+
+  writeFileSync('./downloads/modpicker.js', lines.join('\n'));
+
+  console.log(lines);
+
+  res.render("final", { dates, datesMonday });
 });
 
 app.listen(port, () => {
