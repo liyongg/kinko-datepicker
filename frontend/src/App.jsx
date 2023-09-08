@@ -34,7 +34,7 @@ function App() {
         </a>
       </div>
       <h1>Kinko Datums</h1>
-      
+
       {connected ? (
         <h3 style={{ color: "green" }}>Verbonden!</h3>
       ) : (
@@ -44,8 +44,8 @@ function App() {
       <div className="grid">
         {connected && (
           <>
-            <RenderDates data={dates} prop="addedMondays" title="Uitgezet" />
-            <RenderDates data={dates} prop="filteredDates" title="Aangezet" />
+            <RenderDates data={dates} prop="filteredDates" title="Uitgezet" />
+            <RenderDates data={dates} prop="addedMondays" title="Aangezet" />
           </>
         )}
       </div>
