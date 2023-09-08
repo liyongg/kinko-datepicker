@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
 import RenderDates from "./RenderDates";
+import flatpickr from "flatpickr";
+import "flatpickr/dist/flatpickr.css";
 
 function App() {
   const [dates, setDates] = useState({
@@ -10,8 +12,10 @@ function App() {
     filteredDates: null,
   });
 
+  const [connected, setConnected] = useState(false);
+
   async function loadDates() {
-    const yo = await fetch("/api/connect/")
+    await fetch("/api/connect/")
       .then((res) => res.json())
       .then((dates) =>
         setDates({
@@ -19,28 +23,8 @@ function App() {
           filteredDates: dates.filteredDates,
         })
       );
+    setConnected((value) => true);
   }
-
-  const formatDate = function (stringDate) {
-    const options = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "long",
-    };
-    const inputDate = new Date(stringDate);
-    return inputDate.toLocaleDateString("nl-NL", options);
-  };
-
-  const renderDate = function(property) {
-    const datesRender = dates[property];
-  const dateList =
-    datesRender &&
-    datesRender.map((date, idx) => <li key={idx}>{formatDate(date)}</li>);
-
-    return dateList
-  }
-
 
   return (
     <>
@@ -50,16 +34,20 @@ function App() {
         </a>
       </div>
       <h1>Kinko Datums</h1>
-      <button onClick={loadDates}>Verbind met SFTP</button>
+      
+      {connected ? (
+        <h3 style={{ color: "green" }}>Verbonden!</h3>
+      ) : (
+        <button onClick={loadDates}>Verbind met SFTP</button>
+      )}
+
       <div className="grid">
-        <div>
-          <h2>Uitgezette dagen</h2>
-          <ul>{renderDate("filteredDates")}</ul>
-        </div>
-        <div>
-          <h2>Aangezette maandagen</h2>
-          <ul>{renderDate("addedMondays")}</ul>
-        </div>
+        {connected && (
+          <>
+            <RenderDates data={dates} prop="addedMondays" title="Uitgezet" />
+            <RenderDates data={dates} prop="filteredDates" title="Aangezet" />
+          </>
+        )}
       </div>
     </>
   );
