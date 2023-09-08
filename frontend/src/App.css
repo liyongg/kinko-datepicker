@@ -40,3 +40,13 @@
 .read-the-docs {
   color: #888;
 }
+
+.grid {
+  display: flex;
+  justify-content: space-between;
+}
+
+.grid > div {
+  border: solid 1px rgb(255, 0, 0);
+  padding: 2em;
+}

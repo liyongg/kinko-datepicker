@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
-import kinkoLogo from "/logo.svg";
 import "./App.css";
 import RenderDates from "./RenderDates";
 
@@ -33,10 +32,15 @@ function App() {
     return inputDate.toLocaleDateString("nl-NL", options);
   };
 
-  const dateList = dates.addedMondays
-    && dates.addedMondays.map((date, idx) => (
-        <li key={idx}>{formatDate(date)}</li>
-      ));
+  const renderDate = function(property) {
+    const datesRender = dates[property];
+  const dateList =
+    datesRender &&
+    datesRender.map((date, idx) => <li key={idx}>{formatDate(date)}</li>);
+
+    return dateList
+  }
+
 
   return (
     <>
@@ -46,9 +50,16 @@ function App() {
         </a>
       </div>
       <h1>Kinko Datums</h1>
-      <div className="card">
-        <button onClick={loadDates}>Verbind met SFTP</button>
-        <ul>{dateList}</ul>
+      <button onClick={loadDates}>Verbind met SFTP</button>
+      <div className="grid">
+        <div>
+          <h2>Uitgezette dagen</h2>
+          <ul>{renderDate("filteredDates")}</ul>
+        </div>
+        <div>
+          <h2>Aangezette maandagen</h2>
+          <ul>{renderDate("addedMondays")}</ul>
+        </div>
       </div>
     </>
   );
