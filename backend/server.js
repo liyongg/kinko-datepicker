@@ -1,25 +1,45 @@
-require("dotenv").config();
-const SftpClient = require("ssh2-sftp-client");
+require("dotenv").config({ path: "../.env" });
 const express = require("express");
-const { readFileSync, writeFileSync, createReadStream } = require("fs");
-const app = express();
-const port = process.env.PORT || 3000;
+const router = express.Router();
+const mongoose = require("mongoose");
+const cors = require("cors");
 
-app.set("view engine", "ejs");
+const SftpClient = require("ssh2-sftp-client");
+const {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+} = require("fs");
+
+const app = express();
+const port = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+mongoose.connect(process.env.ATLAS_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const connection = mongoose.connection;
+connection.once("open", () => {
+  console.log("MongoDB database connection established successfully");
+});
+
 app.use(express.urlencoded({ extended: true }));
 
-const sftp = new SftpClient({
-  //   debug: true,
-});
+const sftp = new SftpClient({});
 
 const sftpConfig = {
   protocol: "sftp",
   host: process.env.SFTP_HOSTNAME,
-  port: 22, // Default SFTP port
+  port: 22,
   username: process.env.SFTP_USERNAME,
-  privateKey: readFileSync(process.env.SSH_KEY_PATH), // Use this for key-based authentication
+  privateKey: readFileSync(process.env.SSH_KEY_PATH),
   passphrase: process.env.SSH_PASSPHRASE,
-  //   debug: console.log,
   tryKeyboard: true,
   retries: 0,
   readyTimeout: 1000,
@@ -27,12 +47,12 @@ const sftpConfig = {
 
 async function connect() {
   try {
-    console.log("Trying to connect to SFTP server...");
+    console.log("SFTP: Trying to connect to SFTP server...");
     const sftpConnection = await sftp.connect(sftpConfig);
-    console.log("Connected to SFTP server");
+    console.log("SFTP: Connected to SFTP server");
     return { isConnected: true, client: sftpConnection };
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("SFTP: Error; ", error.message);
     return { isConnected: false, client: null };
   }
 }
@@ -53,17 +73,20 @@ const findAndParseLine = function (lines, pattern, replacement = "ph") {
   };
 };
 
-app.get("/connect", async (req, res) => {
+app.get("/api/connect", async (req, res) => {
   const { isConnected } = await connect();
 
   if (!isConnected) {
-    res.render("error");
+    console.log("Connection not so good!");
+    res.send("");
   }
 
-  const result = await sftp.fastGet(
-    process.env.REMOTE_FILE,
-    "./downloads/testpicker.js"
-  );
+  if (!existsSync("./downloads")) {
+    mkdirSync("./downloads");
+  }
+
+  await sftp.fastGet(process.env.REMOTE_FILE, "./downloads/testpicker.js");
+  console.log("SFTP: file downloaded successfully");
 
   const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
   const lines = dateFile.split("\n");
@@ -75,25 +98,14 @@ app.get("/connect", async (req, res) => {
   const addedMondays = findAndParseLine(lines, /const extraDatums/).evaluation;
 
   await sftp.end();
-  console.log("SFTP connection intentionally broken.");
-  res.render("success", { filteredDates, addedMondays });
+  console.log("SFTP: connection intentionally broken.");
+  res.json({ filteredDates, addedMondays });
 });
 
-app.get("/", (req, res) => {
-  res.render("home");
-});
-
-app.post("/final", async (req, res) => {
+app.post("/api/submit", async (req, res) => {
   const { isConnected } = await connect();
 
-  if (!isConnected) {
-    res.render("error");
-  }
-
-  const { dates, datesMonday } = req.body;
-
-  const parsedDates = dates.split(",").map((date) => date.trim());
-  const parsedMondays = datesMonday.split(",").map((date) => date.trim());
+  const { addedMondays: datesMonday, filteredDates: dates } = req.body;
 
   const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
   const lines = dateFile.split("\n");
@@ -101,12 +113,12 @@ app.post("/final", async (req, res) => {
   const parsedDatesInfo = findAndParseLine(
     lines,
     (pattern = /const filterDatums/),
-    (replacement = parsedDates)
+    (replacement = dates)
   );
   const parsedMondaysInfo = findAndParseLine(
     lines,
     (pattern = /const extraDatums/),
-    (replacement = parsedMondays)
+    (replacement = datesMonday)
   );
 
   lines[parsedDatesInfo.index] = parsedDatesInfo.moddedLine;
@@ -114,15 +126,11 @@ app.post("/final", async (req, res) => {
 
   writeFileSync("./downloads/modpicker.js", lines.join("\n"));
 
+  console.log("SFTP: trying to upload file")
   await sftp.fastPut("./downloads/modpicker.js", process.env.REMOTE_FILE);
-  await sftp.fastPut(
-    "./downloads/testpicker.js",
-    process.env.REMOTE_FILE_BACKUP
-  );
-
+  console.log("SFTP: file succesfully uploaded!")
   await sftp.end();
-  console.log("SFTP connection intentionally broken");
-  res.render("final", { dates, datesMonday });
+  console.log("SFTP: connection intentionally broken");
 });
 
 app.listen(port, () => {
