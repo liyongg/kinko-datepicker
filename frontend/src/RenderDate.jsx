@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+import flatpickr from "flatpickr";
 
 export default function RenderDate({ data, property, title, updateFun }) {
   const [selectedDatesComp, setSelectedDatesComp] = useState(data[property]);

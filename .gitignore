@@ -1,5 +1,5 @@
 # Personal .gitignores
-downloads/*
+**/downloads/*
 
 # Logs
 logs

@@ -31,7 +31,7 @@ export default function RenderDates({ data }) {
             updateFun={setSelectedDatesGroup}
           />
         </div>
-        <button>I'm here</button>
+        <button>Opslaan</button>
       </form>
     </>
   );

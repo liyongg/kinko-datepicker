@@ -1,9 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import kinkoLogo from "./assets/logo.svg";
 import "./App.css";
 import RenderDates from "./RenderDates";
-import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.css";
 
 function App() {
@@ -29,8 +27,8 @@ function App() {
   return (
     <>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
+        <a href="https://kinko.nl/reserveren" target="_blank">
+          <img src={kinkoLogo} className="logo" alt="Kinko logo" />
         </a>
       </div>
       <h1>Kinko Datums</h1>
