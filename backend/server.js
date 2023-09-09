@@ -8,13 +8,12 @@ const SftpClient = require("ssh2-sftp-client");
 const {
   readFileSync,
   writeFileSync,
-  createReadStream,
   existsSync,
   mkdirSync,
 } = require("fs");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
@@ -40,6 +39,7 @@ const sftpConfig = {
   port: 22,
   username: process.env.SFTP_USERNAME,
   privateKey: readFileSync(process.env.SSH_KEY_PATH),
+  passphrase: process.env.SSH_PASSPHRASE,
   tryKeyboard: true,
   retries: 0,
   readyTimeout: 1000,
@@ -103,16 +103,36 @@ app.get("/api/connect", async (req, res) => {
 });
 
 app.post("/api/submit", async (req, res) => {
-  console.log("You routed to post submit!");
+  const { isConnected } = await connect();
 
-  const {addedMondays: datesMonday, filteredDates: dates} = req.body;
+  const { addedMondays: datesMonday, filteredDates: dates } = req.body;
 
-  console.log(dates);
-  console.log(datesMonday);
+  const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
+  const lines = dateFile.split("\n");
 
-  res.json(req.body);
+  const parsedDatesInfo = findAndParseLine(
+    lines,
+    (pattern = /const filterDatums/),
+    (replacement = dates)
+  );
+  const parsedMondaysInfo = findAndParseLine(
+    lines,
+    (pattern = /const extraDatums/),
+    (replacement = datesMonday)
+  );
+
+  lines[parsedDatesInfo.index] = parsedDatesInfo.moddedLine;
+  lines[parsedMondaysInfo.index] = parsedMondaysInfo.moddedLine;
+
+  writeFileSync("./downloads/modpicker.js", lines.join("\n"));
+
+  console.log("SFTP: trying to upload file")
+  await sftp.fastPut("./downloads/modpicker.js", process.env.REMOTE_FILE);
+  console.log("SFTP: file succesfully uploaded!")
+  await sftp.end();
+  console.log("SFTP: connection intentionally broken");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });

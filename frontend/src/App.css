@@ -44,10 +44,12 @@
 .grid {
   display: flex;
   justify-content: space-between;
+  gap: 10px;
 }
 
 .grid > div {
-  border: solid 1px rgb(255, 0, 0);
+  border: solid 1px rgb(255, 255, 255);
+  border-radius: 25px;
   padding: 2em;
 }
 
