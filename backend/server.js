@@ -107,6 +107,12 @@ app.get("/api/connect", async (req, res) => {
   res.json({ filteredDates, addedMondays });
 });
 
+app.post("/api/submit", (req, res) => {
+  console.log("You routed to post submit!")
+  console.log(req.body);
+  res.json(req.body);
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

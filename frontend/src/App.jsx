@@ -41,14 +41,7 @@ function App() {
         <button onClick={loadDates}>Verbind met SFTP</button>
       )}
 
-      <div className="grid">
-        {connected && (
-          <>
-            <RenderDates data={dates} prop="filteredDates" title="Uitgezet" />
-            <RenderDates data={dates} prop="addedMondays" title="Aangezet" />
-          </>
-        )}
-      </div>
+      <div className="grid">{connected && <RenderDates data={dates} />}</div>
     </>
   );
 }
