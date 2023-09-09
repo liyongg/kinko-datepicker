@@ -17,18 +17,20 @@ export default function RenderDates({ data }) {
   return (
     <>
       <form onSubmit={handleSubmit}>
-        <RenderDate
-          data={data}
-          property="filteredDates"
-          title="Uitgezet"
-          updateFun={setSelectedDatesGroup}
-        />
-        <RenderDate
-          data={data}
-          property="addedMondays"
-          title="Aangezet"
-          updateFun={setSelectedDatesGroup}
-        />
+        <div className="grid">
+          <RenderDate
+            data={data}
+            property="filteredDates"
+            title="Uitgezet"
+            updateFun={setSelectedDatesGroup}
+          />
+          <RenderDate
+            data={data}
+            property="addedMondays"
+            title="Aangezet"
+            updateFun={setSelectedDatesGroup}
+          />
+        </div>
         <button>I'm here</button>
       </form>
     </>

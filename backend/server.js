@@ -20,7 +20,6 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB (You should have MongoDB installed and running)
 mongoose.connect(process.env.ATLAS_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -38,11 +37,9 @@ const sftp = new SftpClient({});
 const sftpConfig = {
   protocol: "sftp",
   host: process.env.SFTP_HOSTNAME,
-  port: 22, // Default SFTP port
+  port: 22,
   username: process.env.SFTP_USERNAME,
-  privateKey: readFileSync(process.env.SSH_KEY_PATH), // Use this for key-based authentication
-  passphrase: process.env.SSH_PASSPHRASE,
-  //   debug: console.log,
+  privateKey: readFileSync(process.env.SSH_KEY_PATH),
   tryKeyboard: true,
   retries: 0,
   readyTimeout: 1000,
@@ -76,8 +73,6 @@ const findAndParseLine = function (lines, pattern, replacement = "ph") {
   };
 };
 
-// Define your API routes here
-
 app.get("/api/connect", async (req, res) => {
   const { isConnected } = await connect();
 
@@ -107,9 +102,14 @@ app.get("/api/connect", async (req, res) => {
   res.json({ filteredDates, addedMondays });
 });
 
-app.post("/api/submit", (req, res) => {
-  console.log("You routed to post submit!")
-  console.log(req.body);
+app.post("/api/submit", async (req, res) => {
+  console.log("You routed to post submit!");
+
+  const {addedMondays: datesMonday, filteredDates: dates} = req.body;
+
+  console.log(dates);
+  console.log(datesMonday);
+
   res.json(req.body);
 });
 

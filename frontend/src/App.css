@@ -50,3 +50,7 @@
   border: solid 1px rgb(255, 0, 0);
   padding: 2em;
 }
+
+.grid > button {
+  justify-content: center;
+}

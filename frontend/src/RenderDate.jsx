@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 
-export default function RenderDate({ data, property, title }) {
+export default function RenderDate({ data, property, title, updateFun }) {
   const [selectedDatesComp, setSelectedDatesComp] = useState(data[property]);
 
   const datePickerRef = useRef(null);
@@ -26,11 +26,25 @@ export default function RenderDate({ data, property, title }) {
       altFormat: "l j F, Y",
       defaultDate: data[property],
       minDate: "today",
-      onClose: function (selectedDates) {
-        setSelectedDatesComp((dates) => selectedDates);
+      onChange: function (selectedDates) {
+        updateFun((currData) => {
+          return {
+            ...currData,
+            [property]: selectedDates.map((date) => formatDateYMD(date)),
+          };
+        });
+        setSelectedDatesComp(selectedDates);
       },
     });
   }, []);
+
+  const formatDateYMD = function (date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
 
   const formatDate = function (stringDate) {
     const options = {
@@ -52,11 +66,10 @@ export default function RenderDate({ data, property, title }) {
       <h2>{title}</h2>
       <ul>{dateList}</ul>
       <label htmlFor={property}>Selected</label>
-      <input type="text" ref={datePickerRef} id={property}/>
-      <h2>Geselecteerde datums</h2>
+      <input type="text" ref={datePickerRef} id={property} />
       <ul>
-        {selectedDatesComp.map((date) => (
-          <li> {formatDate(date)} </li>
+        {selectedDatesComp.map((date, idx) => (
+          <li key={idx}>{formatDate(date)}</li>
         ))}
       </ul>
     </div>

@@ -8,8 +8,8 @@ import "flatpickr/dist/flatpickr.css";
 
 function App() {
   const [dates, setDates] = useState({
-    addedMondays: null,
     filteredDates: null,
+    addedMondays: null,
   });
 
   const [connected, setConnected] = useState(false);
