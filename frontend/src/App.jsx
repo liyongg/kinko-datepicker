@@ -65,7 +65,8 @@ function App() {
 
         console.log("Form login successful!");
       } else {
-        console.error("Form submission failed despite response.ok");
+        const resJson = await response.json();
+        console.error("Form submission failed despite:", resJson.message);
       }
     } catch (error) {
       console.error("Form error: ", error);

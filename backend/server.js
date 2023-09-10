@@ -73,8 +73,24 @@ const findAndParseLine = function (lines, pattern, replacement = "ph") {
   };
 };
 
-app.get("/api/connect", async (req, res) => {
-  const { isConnected } = await connect();
+const isLoggedIn = function (req, res, next) {
+  const token = req.header("Authorization");
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
+
+app.get("/api/connect", isLoggedIn, async (req, res) => {
+  await connect();
 
   if (!isConnected) {
     console.log("Connection not so good!");
@@ -102,8 +118,8 @@ app.get("/api/connect", async (req, res) => {
   res.json({ filteredDates, addedMondays });
 });
 
-app.post("/api/submit", async (req, res) => {
-  const { isConnected } = await connect();
+app.post("/api/submit", isLoggedIn, async (req, res) => {
+  await connect();
 
   const { addedMondays: datesMonday, filteredDates: dates } = req.body;
 
@@ -136,7 +152,6 @@ app.post("/api/submit", async (req, res) => {
 
 app.post("/api/register", async (req, res) => {
   const allowRegisters = process.env.ALLOW_REGISTER.toLowerCase() === "true";
-  console.log(allowRegisters);
   if (!allowRegisters) {
     return res.status(400).json({ message: "Registers are disabled" });
   }
