@@ -89,6 +89,21 @@ const isLoggedIn = function (req, res, next) {
   }
 };
 
+const formatTime = function () {
+  const currentDate = new Date();
+
+  // Get the year, month, day, hour, and minute components
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, "0"); // Month is 0-based
+  const day = String(currentDate.getDate()).padStart(2, "0");
+  const hour = String(currentDate.getHours()).padStart(2, "0");
+  const minute = String(currentDate.getMinutes()).padStart(2, "0");
+  const second = String(currentDate.getSeconds()).padStart(2, "0");
+
+  // Format the components into the desired string format
+  return `${year}${month}${day}.${hour}${minute}${second}`;
+};
+
 app.get("/api/connect", isLoggedIn, async (req, res) => {
   const { isConnected } = await connect();
 
@@ -101,7 +116,18 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
     mkdirSync("./downloads");
   }
 
-  await sftp.fastGet(process.env.REMOTE_FILE, "./downloads/testpicker.js");
+  const file = await sftp.list(process.env.REMOTE_DIR, (obj) =>
+    /\d{8}\.\d{6}/.test(obj.name)
+  );
+
+  if (file.length > 1) {
+    console.log("More than 1 file found.");
+    await sftp.end();
+    return res.status(400).json({ message: "More than 1 file found" });
+  }
+
+  const remoteFile = `${process.env.REMOTE_DIR}/${file[0].name}`;
+  await sftp.fastGet(remoteFile, "./downloads/testpicker.js");
   console.log("SFTP: file downloaded successfully");
 
   const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
@@ -142,8 +168,13 @@ app.post("/api/submit", isLoggedIn, async (req, res) => {
 
   writeFileSync("./downloads/modpicker.js", lines.join("\n"));
 
+  // Upload new flatpickr.js file with timestamp in name
+  const currentTime = formatTime();
+  const file = `flatpickr.${currentTime}.js`;
+  const remoteFile = `${process.env.REMOTE_DIR}/${file}`;
+
   console.log("SFTP: trying to upload file");
-  await sftp.fastPut("./downloads/modpicker.js", process.env.REMOTE_FILE);
+  await sftp.fastPut("./downloads/modpicker.js", remoteFile);
   console.log("SFTP: file succesfully uploaded!");
   await sftp.end();
   console.log("SFTP: connection intentionally broken");
