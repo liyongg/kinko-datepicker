@@ -90,7 +90,7 @@ const isLoggedIn = function (req, res, next) {
 };
 
 app.get("/api/connect", isLoggedIn, async (req, res) => {
-  await connect();
+  const { isConnected } = await connect();
 
   if (!isConnected) {
     console.log("Connection not so good!");

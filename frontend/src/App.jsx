@@ -9,7 +9,6 @@ function App() {
   const [token, setToken] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const [dates, setDates] = useState({
@@ -31,16 +30,22 @@ function App() {
   };
 
   async function loadDates() {
-    await fetch("/api/connect/")
+    await fetch("/api/connect/", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+    })
       .then((res) => res.json())
-      .then((dates) =>
+      .then((dates) => {
         setDates({
           addedMondays: dates.addedMondays,
           filteredDates: dates.filteredDates,
-        })
-      );
-    setConnected((value) => true);
-    setIsSubmitted(false);
+        });
+      });
+    setConnected(() => true);
+    setIsSubmitted(() => false);
   }
 
   async function handleLogin(evt) {
@@ -130,6 +135,7 @@ function App() {
         <div className="grid">
           <RenderDates
             data={dates}
+            token={token}
             updateConnected={setConnected}
             updateSubmitted={setIsSubmitted}
           />

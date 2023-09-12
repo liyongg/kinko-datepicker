@@ -3,6 +3,7 @@ import RenderDate from "./RenderDate";
 
 export default function RenderDates({
   data,
+  token,
   updateConnected,
   updateSubmitted,
 }) {
@@ -12,7 +13,7 @@ export default function RenderDates({
     e.preventDefault();
     const response = await fetch("/api/submit/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: token },
       body: JSON.stringify(selectedDatesGroup),
     });
 
