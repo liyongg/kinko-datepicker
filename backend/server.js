@@ -133,6 +133,25 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
     /\d{8}\.\d{6}/.test(obj.name)
   );
 
+  if (files.length > 3) {
+    console.log('SFTP: trying to delete files')
+    const filesToDelete = files
+      .slice(0, files.length - 3)
+      .map((obj) => `${process.env.REMOTE_DIR}/${obj.name}`);
+
+    await Promise.all(
+      filesToDelete.map(async (filePath) => {
+        try {
+          await sftp.delete(filePath);
+          console.log(`File ${filePath} successfully deleted`)
+        } catch (error) {
+          console.error(`Error deleting file ${filePath}: ${error.message}`)
+        }
+      })
+    )
+    
+  }
+
   const remoteFile = `${process.env.REMOTE_DIR}/${files.slice(-1)[0].name}`;
   await sftp.fastGet(remoteFile, "./downloads/testpicker.js");
   console.log("SFTP: file downloaded successfully");
