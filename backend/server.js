@@ -129,11 +129,11 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
     mkdirSync("./downloads");
   }
 
-  const file = await sftp.list(process.env.REMOTE_DIR, (obj) =>
+  const files = await sftp.list(process.env.REMOTE_DIR, (obj) =>
     /\d{8}\.\d{6}/.test(obj.name)
   );
 
-  const remoteFile = `${process.env.REMOTE_DIR}/${file[0].name}`;
+  const remoteFile = `${process.env.REMOTE_DIR}/${files.slice(-1)[0].name}`;
   await sftp.fastGet(remoteFile, "./downloads/testpicker.js");
   console.log("SFTP: file downloaded successfully");
 
