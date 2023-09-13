@@ -31,8 +31,6 @@ connection.once("open", () => {
 
 app.use(express.urlencoded({ extended: true }));
 
-const sftp = new SftpClient({});
-
 const sftpConfig = {
   protocol: "sftp",
   host: process.env.SFTP_HOSTNAME,
@@ -45,7 +43,7 @@ const sftpConfig = {
   readyTimeout: 1000,
 };
 
-async function connect() {
+async function connect(sftp) {
   try {
     console.log("SFTP: Trying to connect to SFTP server...");
     const sftpConnection = await sftp.connect(sftpConfig);
@@ -118,7 +116,9 @@ const formatTime = function () {
 };
 
 app.get("/api/connect", isLoggedIn, async (req, res) => {
-  const { isConnected } = await connect();
+  const sftp = new SftpClient({});
+
+  const { isConnected } = await connect(sftp);
 
   if (!isConnected) {
     console.log("Connection not so good!");
@@ -157,7 +157,9 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
 });
 
 app.post("/api/submit", isLoggedIn, async (req, res) => {
-  await connect();
+  const sftp = new SftpClient({});
+
+  await connect(sftp);
 
   const { addedMondays: datesMonday, filteredDates: dates } = req.body;
 
