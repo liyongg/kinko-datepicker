@@ -31,8 +31,6 @@ connection.once("open", () => {
 
 app.use(express.urlencoded({ extended: true }));
 
-const sftp = new SftpClient({});
-
 const sftpConfig = {
   protocol: "sftp",
   host: process.env.SFTP_HOSTNAME,
@@ -45,7 +43,7 @@ const sftpConfig = {
   readyTimeout: 1000,
 };
 
-async function connect() {
+async function connect(sftp) {
   try {
     console.log("SFTP: Trying to connect to SFTP server...");
     const sftpConnection = await sftp.connect(sftpConfig);
@@ -57,16 +55,29 @@ async function connect() {
   }
 }
 
-const findAndParseLine = function (lines, pattern, replacement = "ph") {
-  const matchingLine = lines.find((line) => line.match(pattern));
-  const matchingDates = matchingLine.match(/\[.*?\]/)[0];
+const findAndParseLine = function (
+  lines,
+  patternToFind,
+  patternToReplace,
+  replacement = "ph"
+) {
+  const matchingLine = lines.find((line) => line.match(patternToFind));
+  const matchingDates = matchingLine.match(patternToReplace)[0];
   const index = lines.indexOf(matchingLine);
   const moddedLine = matchingLine.replace(
-    /\[.*?\]/,
+    patternToReplace,
     JSON.stringify(replacement)
   );
+
+  let evaluation;
+  try {
+    evaluation = eval(matchingDates);
+  } catch {
+    evaluation = matchingDates;
+  }
+
   return {
-    evaluation: eval(matchingDates),
+    evaluation,
     index,
     line: matchingLine,
     moddedLine,
@@ -89,8 +100,25 @@ const isLoggedIn = function (req, res, next) {
   }
 };
 
+const formatTime = function () {
+  const currentDate = new Date();
+
+  // Get the year, month, day, hour, and minute components
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, "0"); // Month is 0-based
+  const day = String(currentDate.getDate()).padStart(2, "0");
+  const hour = String(currentDate.getHours()).padStart(2, "0");
+  const minute = String(currentDate.getMinutes()).padStart(2, "0");
+  const second = String(currentDate.getSeconds()).padStart(2, "0");
+
+  // Format the components into the desired string format
+  return `${year}${month}${day}.${hour}${minute}${second}`;
+};
+
 app.get("/api/connect", isLoggedIn, async (req, res) => {
-  const { isConnected } = await connect();
+  const sftp = new SftpClient({});
+
+  const { isConnected } = await connect(sftp);
 
   if (!isConnected) {
     console.log("Connection not so good!");
@@ -101,7 +129,31 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
     mkdirSync("./downloads");
   }
 
-  await sftp.fastGet(process.env.REMOTE_FILE, "./downloads/testpicker.js");
+  const files = await sftp.list(process.env.REMOTE_DIR, (obj) =>
+    /\d{8}\.\d{6}/.test(obj.name)
+  );
+
+  if (files.length > 3) {
+    console.log('SFTP: trying to delete files')
+    const filesToDelete = files
+      .slice(0, files.length - 3)
+      .map((obj) => `${process.env.REMOTE_DIR}/${obj.name}`);
+
+    await Promise.all(
+      filesToDelete.map(async (filePath) => {
+        try {
+          await sftp.delete(filePath);
+          console.log(`File ${filePath} successfully deleted`)
+        } catch (error) {
+          console.error(`Error deleting file ${filePath}: ${error.message}`)
+        }
+      })
+    )
+    
+  }
+
+  const remoteFile = `${process.env.REMOTE_DIR}/${files.slice(-1)[0].name}`;
+  await sftp.fastGet(remoteFile, "./downloads/testpicker.js");
   console.log("SFTP: file downloaded successfully");
 
   const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
@@ -109,9 +161,14 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
 
   const filteredDates = findAndParseLine(
     lines,
-    /const filterDatums/
+    (patternToFind = /const filterDatums/),
+    (patternToReplace = /\[.*?\]/)
   ).evaluation;
-  const addedMondays = findAndParseLine(lines, /const extraDatums/).evaluation;
+  const addedMondays = findAndParseLine(
+    lines,
+    (patternToFind = /const extraDatums/),
+    (patternToReplace = /\[.*?\]/)
+  ).evaluation;
 
   await sftp.end();
   console.log("SFTP: connection intentionally broken.");
@@ -119,7 +176,9 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
 });
 
 app.post("/api/submit", isLoggedIn, async (req, res) => {
-  await connect();
+  const sftp = new SftpClient({});
+
+  await connect(sftp);
 
   const { addedMondays: datesMonday, filteredDates: dates } = req.body;
 
@@ -128,12 +187,14 @@ app.post("/api/submit", isLoggedIn, async (req, res) => {
 
   const parsedDatesInfo = findAndParseLine(
     lines,
-    (pattern = /const filterDatums/),
+    (patternToFind = /const filterDatums/),
+    (patternToReplace = /\[.*?\]/),
     (replacement = dates)
   );
   const parsedMondaysInfo = findAndParseLine(
     lines,
-    (pattern = /const extraDatums/),
+    (patternToFind = /const extraDatums/),
+    (patternToReplace = /\[.*?\]/),
     (replacement = datesMonday)
   );
 
@@ -142,9 +203,35 @@ app.post("/api/submit", isLoggedIn, async (req, res) => {
 
   writeFileSync("./downloads/modpicker.js", lines.join("\n"));
 
+  // Upload new flatpickr.js file with timestamp in name
   console.log("SFTP: trying to upload file");
-  await sftp.fastPut("./downloads/modpicker.js", process.env.REMOTE_FILE);
-  console.log("SFTP: file succesfully uploaded!");
+  const currentTime = formatTime();
+  const fileFlatpickr = `flatpickr.${currentTime}.js`;
+  const remoteFile = `${process.env.REMOTE_DIR}/${fileFlatpickr}`;
+  await sftp.fastPut("./downloads/modpicker.js", remoteFile);
+  console.log("SFTP: flatpickr file succesfully uploaded!");
+
+  // Modify contents of functions.php
+  const remoteFunctionsFile = `${process.env.REMOTE_DIR}/functions.php`;
+  await sftp.fastGet(remoteFunctionsFile, "./downloads/functions.php");
+  const functionsFile = readFileSync("./downloads/functions.php", "utf-8");
+  const linesFunctionsFile = functionsFile.split("\n");
+
+  const parsedFunctionsInfo = findAndParseLine(
+    linesFunctionsFile,
+    (patternToFind = /flatpickr.\d{8}.\d{6}.js/),
+    (patternToReplace = /flatpickr.\d{8}.\d{6}.js/),
+    (replacement = fileFlatpickr)
+  );
+
+  linesFunctionsFile[parsedFunctionsInfo.index] =
+    parsedFunctionsInfo.moddedLine;
+  writeFileSync("./downloads/modfunctions.php", linesFunctionsFile.join("\n"));
+
+  await sftp.fastPut("./downloads/modfunctions.php", remoteFunctionsFile);
+
+  // Delete old flatpickr.js file
+
   await sftp.end();
   console.log("SFTP: connection intentionally broken");
   res.status(200).json({ message: "Dates submitted!" });
