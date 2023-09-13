@@ -57,16 +57,29 @@ async function connect() {
   }
 }
 
-const findAndParseLine = function (lines, pattern, replacement = "ph") {
-  const matchingLine = lines.find((line) => line.match(pattern));
-  const matchingDates = matchingLine.match(/\[.*?\]/)[0];
+const findAndParseLine = function (
+  lines,
+  patternToFind,
+  patternToReplace,
+  replacement = "ph"
+) {
+  const matchingLine = lines.find((line) => line.match(patternToFind));
+  const matchingDates = matchingLine.match(patternToReplace)[0];
   const index = lines.indexOf(matchingLine);
   const moddedLine = matchingLine.replace(
-    /\[.*?\]/,
+    patternToReplace,
     JSON.stringify(replacement)
   );
+
+  let evaluation;
+  try {
+    evaluation = eval(matchingDates);
+  } catch {
+    evaluation = matchingDates;
+  }
+
   return {
-    evaluation: eval(matchingDates),
+    evaluation,
     index,
     line: matchingLine,
     moddedLine,
@@ -120,12 +133,6 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
     /\d{8}\.\d{6}/.test(obj.name)
   );
 
-  if (file.length > 1) {
-    console.log("More than 1 file found.");
-    await sftp.end();
-    return res.status(400).json({ message: "More than 1 file found" });
-  }
-
   const remoteFile = `${process.env.REMOTE_DIR}/${file[0].name}`;
   await sftp.fastGet(remoteFile, "./downloads/testpicker.js");
   console.log("SFTP: file downloaded successfully");
@@ -135,9 +142,14 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
 
   const filteredDates = findAndParseLine(
     lines,
-    /const filterDatums/
+    (patternToFind = /const filterDatums/),
+    (patternToReplace = /\[.*?\]/)
   ).evaluation;
-  const addedMondays = findAndParseLine(lines, /const extraDatums/).evaluation;
+  const addedMondays = findAndParseLine(
+    lines,
+    (patternToFind = /const extraDatums/),
+    (patternToReplace = /\[.*?\]/)
+  ).evaluation;
 
   await sftp.end();
   console.log("SFTP: connection intentionally broken.");
@@ -154,12 +166,14 @@ app.post("/api/submit", isLoggedIn, async (req, res) => {
 
   const parsedDatesInfo = findAndParseLine(
     lines,
-    (pattern = /const filterDatums/),
+    (patternToFind = /const filterDatums/),
+    (patternToReplace = /\[.*?\]/),
     (replacement = dates)
   );
   const parsedMondaysInfo = findAndParseLine(
     lines,
-    (pattern = /const extraDatums/),
+    (patternToFind = /const extraDatums/),
+    (patternToReplace = /\[.*?\]/),
     (replacement = datesMonday)
   );
 
@@ -169,13 +183,34 @@ app.post("/api/submit", isLoggedIn, async (req, res) => {
   writeFileSync("./downloads/modpicker.js", lines.join("\n"));
 
   // Upload new flatpickr.js file with timestamp in name
-  const currentTime = formatTime();
-  const file = `flatpickr.${currentTime}.js`;
-  const remoteFile = `${process.env.REMOTE_DIR}/${file}`;
-
   console.log("SFTP: trying to upload file");
+  const currentTime = formatTime();
+  const fileFlatpickr = `flatpickr.${currentTime}.js`;
+  const remoteFile = `${process.env.REMOTE_DIR}/${fileFlatpickr}`;
   await sftp.fastPut("./downloads/modpicker.js", remoteFile);
-  console.log("SFTP: file succesfully uploaded!");
+  console.log("SFTP: flatpickr file succesfully uploaded!");
+
+  // Modify contents of functions.php
+  const remoteFunctionsFile = `${process.env.REMOTE_DIR}/functions.php`;
+  await sftp.fastGet(remoteFunctionsFile, "./downloads/functions.php");
+  const functionsFile = readFileSync("./downloads/functions.php", "utf-8");
+  const linesFunctionsFile = functionsFile.split("\n");
+
+  const parsedFunctionsInfo = findAndParseLine(
+    linesFunctionsFile,
+    (patternToFind = /flatpickr.\d{8}.\d{6}.js/),
+    (patternToReplace = /flatpickr.\d{8}.\d{6}.js/),
+    (replacement = fileFlatpickr)
+  );
+
+  linesFunctionsFile[parsedFunctionsInfo.index] =
+    parsedFunctionsInfo.moddedLine;
+  writeFileSync("./downloads/modfunctions.php", linesFunctionsFile.join("\n"));
+
+  await sftp.fastPut("./downloads/modfunctions.php", remoteFunctionsFile);
+
+  // Delete old flatpickr.js file
+
   await sftp.end();
   console.log("SFTP: connection intentionally broken");
   res.status(200).json({ message: "Dates submitted!" });
