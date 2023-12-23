@@ -58,7 +58,9 @@ export default function RenderDate({ data, property, title, updateFun }) {
     return inputDate.toLocaleDateString("nl-NL", options);
   };
 
-  const dates = data[property];
+  const currentDate = new Date().toISOString().split("T")[0];
+  const dates = data[property].filter((date) => date >= currentDate);
+
   const dateList =
     dates && dates.map((date, idx) => <li key={idx}>{formatDate(date)}</li>);
 
