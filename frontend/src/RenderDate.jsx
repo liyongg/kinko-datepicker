@@ -2,7 +2,11 @@ import { useRef, useEffect, useState } from "react";
 import flatpickr from "flatpickr";
 
 export default function RenderDate({ data, property, title, updateFun }) {
-  const [selectedDatesComp, setSelectedDatesComp] = useState(data[property]);
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  const [selectedDatesComp, setSelectedDatesComp] = useState(
+    data[property].filter((date) => date >= currentDate)
+  );
 
   const datePickerRef = useRef(null);
 
@@ -25,7 +29,7 @@ export default function RenderDate({ data, property, title, updateFun }) {
       dateFormat: "Y-m-d",
       altInput: true,
       altFormat: "l j F, Y",
-      defaultDate: data[property],
+      defaultDate: data[property].filter((date) => date >= currentDate),
       minDate: "today",
       onChange: function (selectedDates) {
         updateFun((currData) => {
@@ -58,7 +62,6 @@ export default function RenderDate({ data, property, title, updateFun }) {
     return inputDate.toLocaleDateString("nl-NL", options);
   };
 
-  const currentDate = new Date().toISOString().split("T")[0];
   const dates = data[property].filter((date) => date >= currentDate);
 
   const dateList =
