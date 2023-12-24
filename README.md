@@ -12,3 +12,6 @@ When encountering network problems, make sure to check for the following
 2.  PM2 list\
     If the backend process is not running anymore, make sure to navigate to the backend folder and then run.\
     `pm2 start server.js --name kinko`
+
+3.  Permissions\
+    Check whether there are conflicting `pm2` services running at the same time, but on different accounts. As of now, the service is run as root user, and trying to run it as another user as well will cause conflicts for the backend.
