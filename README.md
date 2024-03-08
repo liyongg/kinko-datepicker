@@ -6,7 +6,7 @@ Therefore I created a simply interface, avoiding manually entering file server m
 
 ## Example
 
-![An example of using the simple interface](example.mp4)
+![An example of using the simple interface](example.mov)
 
 ## Troubleshooting
 
