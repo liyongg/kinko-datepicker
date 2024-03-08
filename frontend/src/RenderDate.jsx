@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import flatpickr from "flatpickr";
+import { Dutch } from "flatpickr/dist/l10n/nl.js";
 
 export default function RenderDate({ data, property, title, updateFun }) {
   const currentDate = new Date().toISOString().split("T")[0];
@@ -9,6 +10,8 @@ export default function RenderDate({ data, property, title, updateFun }) {
   );
 
   const datePickerRef = useRef(null);
+
+  flatpickr.localize(Dutch);
 
   useEffect(() => {
     flatpickr(datePickerRef.current, {
