@@ -18,6 +18,7 @@ jobs:
           script: |
             cd /var/www/html/kinko
             pm2 stop kinko
+            git checkout main
             git pull
             cd frontend
             npm run build

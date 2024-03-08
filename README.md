@@ -18,5 +18,4 @@ When encountering problems, make sure to check for the following
 
 ## To-Do
 
-1.  Make a GitHub Actions prompt to automatically pull changes to the server.
-2.  Edit dateslist for a better organised view.
+1.  Edit dateslist for a better organised view.
