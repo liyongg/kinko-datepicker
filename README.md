@@ -1,8 +1,10 @@
 # kinko-datepicker
 
-An interface for selecting enabling and disabling dates.
+An interface for enabling and disabling dates, specifically for [kinko.nl](https://kinko.nl/reserveren).
+As far as I know there is no easy way to disable dates for the `flatpickr` instances that are used by the _Avada Forms_ on Wordpress websites.
+Therefore I created a simply interface, avoiding manually entering file server making changes to the `flatpickr.js` files.
 
-## Setup
+## Troubleshooting
 
 When encountering problems, make sure to check for the following
 
@@ -15,7 +17,3 @@ When encountering problems, make sure to check for the following
 
 3.  Permissions\
     Check whether there are conflicting `pm2` services running at the same time, but on different accounts. As of now, the service is run as root user, and trying to run it as another user as well will cause conflicts for the backend.
-
-## To-Do
-
-1.  Edit dateslist for a better organised view.
