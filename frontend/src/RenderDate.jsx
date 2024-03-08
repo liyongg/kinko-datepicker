@@ -71,7 +71,6 @@ export default function RenderDate({ data, property, title, updateFun }) {
     <div>
       <h2>{title}</h2>
       <ul>{dateList}</ul>
-      {/* <label htmlFor={property}>Selected</label> */}
       <input type="text" ref={datePickerRef} id={property} />
       <h2>Selectie</h2>
       <ul>
