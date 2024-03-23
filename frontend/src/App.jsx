@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import kinkoLogo from "./assets/logo.svg";
+import githubLogo from "./assets/github.svg";
 import "./App.css";
 import RenderDates from "./RenderDates";
 import "flatpickr/dist/flatpickr.css";
@@ -141,6 +142,17 @@ function App() {
           />
         </div>
       )}
+
+      <div>
+        <a href="https://github.com/liyongg/kinko-datepicker" target="_blank">
+          <img
+            src={githubLogo}
+            className="logo"
+            style={{ width: "30px", height: "30px", paddingTop: "3em" }}
+            alt="GitHub Logo"
+          />
+        </a>
+      </div>
     </>
   );
 }
