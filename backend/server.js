@@ -133,6 +133,8 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
     /\d{8}\.\d{6}/.test(obj.name)
   );
 
+  files.sort((a, b) => a.modifyTime - b.modifyTime);
+
   if (files.length > 3) {
     console.log('SFTP: trying to delete files')
     const filesToDelete = files
@@ -154,7 +156,7 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
 
   const remoteFile = `${process.env.REMOTE_DIR}/${files.slice(-1)[0].name}`;
   await sftp.fastGet(remoteFile, "./downloads/testpicker.js");
-  console.log("SFTP: file downloaded successfully");
+  console.log(`SFTP: file ${remoteFile} downloaded successfully`);
 
   const dateFile = readFileSync("./downloads/testpicker.js", "utf-8");
   const lines = dateFile.split("\n");
