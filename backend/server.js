@@ -39,8 +39,8 @@ const sftpConfig = {
   privateKey: readFileSync(process.env.SSH_KEY_PATH),
   passphrase: process.env.SSH_PASSPHRASE,
   tryKeyboard: true,
-  retries: 0,
-  readyTimeout: 1000,
+  retries: 1,
+  readyTimeout: 20000,
 };
 
 async function connect(sftp) {
