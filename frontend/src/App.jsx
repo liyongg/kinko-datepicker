@@ -5,12 +5,14 @@ import "./App.css";
 import RenderDates from "./RenderDates";
 import "flatpickr/dist/flatpickr.css";
 import PopupModal from "./PopupModal";
+import ClipLoader from "react-spinners/ClipLoader";
 
 function App() {
   const [token, setToken] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [connected, setConnected] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [dates, setDates] = useState({
     filteredDates: null,
@@ -31,6 +33,7 @@ function App() {
   };
 
   async function loadDates() {
+    setLoading(true);
     await fetch("/api/connect/", {
       method: "GET",
       headers: {
@@ -47,10 +50,12 @@ function App() {
       });
     setConnected(() => true);
     setIsSubmitted(() => false);
+    setLoading(false);
   }
 
   async function handleLogin(evt) {
     evt.preventDefault();
+    setLoading(true);
     const apiForm = evt.nativeEvent.submitter.name;
 
     try {
@@ -77,6 +82,7 @@ function App() {
     } catch (error) {
       console.error("Form error: ", error);
     }
+    setLoading(false);
   }
 
   function handleChange(evt) {
@@ -119,13 +125,19 @@ function App() {
               onChange={handleChange}
             />
           </div>
-          <button name="register">Register</button>
-          <button name="login">Login</button>
+          <button name="register" disabled={loading}>
+            Register
+          </button>
+          <button name="login" disabled={loading}>
+            Login
+          </button>
         </form>
       )}
 
       {isLoggedIn && !connected && (
-        <button onClick={loadDates}>Verbind met SFTP</button>
+        <button onClick={loadDates} disabled={loading}>
+          Verbind met SFTP
+        </button>
       )}
 
       {isLoggedIn && connected && (
@@ -142,6 +154,8 @@ function App() {
           />
         </div>
       )}
+
+      <div style={{paddingTop: "10px"}}> {loading ? <ClipLoader size={30} color="white" /> : null}</div>
 
       <div>
         <a href="https://github.com/liyongg/kinko-datepicker" target="_blank">
