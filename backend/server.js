@@ -59,15 +59,18 @@ const findAndParseLine = function (
   lines,
   patternToFind,
   patternToReplace,
-  replacement = "ph"
+  replacement = "ph",
+  stringify = true
 ) {
   const matchingLine = lines.find((line) => line.match(patternToFind));
   const matchingDates = matchingLine.match(patternToReplace)[0];
   const index = lines.indexOf(matchingLine);
-  const moddedLine = matchingLine.replace(
-    patternToReplace,
-    JSON.stringify(replacement)
-  );
+
+  if (stringify) {
+    replacement = JSON.stringify(replacement);
+  }
+
+  const moddedLine = matchingLine.replace(patternToReplace, replacement);
 
   let evaluation;
   try {
@@ -122,7 +125,7 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
 
   if (!isConnected) {
     console.log("Connection not so good!");
-    res.send("");
+    res.send("Could not connect to the SFTP server");
   }
 
   if (!existsSync("./downloads")) {
@@ -136,7 +139,7 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
   files.sort((a, b) => a.modifyTime - b.modifyTime);
 
   if (files.length > 3) {
-    console.log('SFTP: trying to delete files')
+    console.log("SFTP: trying to delete files");
     const filesToDelete = files
       .slice(0, files.length - 3)
       .map((obj) => `${process.env.REMOTE_DIR}/${obj.name}`);
@@ -145,13 +148,12 @@ app.get("/api/connect", isLoggedIn, async (req, res) => {
       filesToDelete.map(async (filePath) => {
         try {
           await sftp.delete(filePath);
-          console.log(`File ${filePath} successfully deleted`)
+          console.log(`File ${filePath} successfully deleted`);
         } catch (error) {
-          console.error(`Error deleting file ${filePath}: ${error.message}`)
+          console.error(`Error deleting file ${filePath}: ${error.message}`);
         }
       })
-    )
-    
+    );
   }
 
   const remoteFile = `${process.env.REMOTE_DIR}/${files.slice(-1)[0].name}`;
@@ -223,7 +225,8 @@ app.post("/api/submit", isLoggedIn, async (req, res) => {
     linesFunctionsFile,
     (patternToFind = /flatpickr.\d{8}.\d{6}.js/),
     (patternToReplace = /flatpickr.\d{8}.\d{6}.js/),
-    (replacement = fileFlatpickr)
+    (replacement = fileFlatpickr),
+    (stringify = false)
   );
 
   linesFunctionsFile[parsedFunctionsInfo.index] =
