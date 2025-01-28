@@ -20,7 +20,10 @@ jobs:
             pm2 stop kinko
             git checkout main
             git pull
-            cd frontend
+            cd backend
+            npm install
+            cd ../frontend
+            npm install
             npm run build
             pm2 start kinko
             
