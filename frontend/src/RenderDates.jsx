@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import RenderDate from "./RenderDate";
+import ClipLoader from "react-spinners/ClipLoader";
 
 export default function RenderDates({
   data,
@@ -8,9 +9,11 @@ export default function RenderDates({
   updateSubmitted,
 }) {
   const [selectedDatesGroup, setSelectedDatesGroup] = useState(data);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async function (e) {
     e.preventDefault();
+    setLoading(true);
     const response = await fetch("/api/submit/", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: token },
@@ -23,6 +26,7 @@ export default function RenderDates({
       updateSubmitted(true);
       updateConnected(false);
     }
+    setLoading(false);
   };
 
   return (
@@ -42,7 +46,10 @@ export default function RenderDates({
             updateFun={setSelectedDatesGroup}
           />
         </div>
-        <button>Opslaan</button>
+        <button disabled={loading}>Opslaan</button>
+        <div style={{ paddingTop: "10px" }}>
+          {loading ? <ClipLoader size={30} color="white" /> : null}
+        </div>
       </form>
     </>
   );
