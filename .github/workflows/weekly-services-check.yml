@@ -1,0 +1,30 @@
+name: Weekly services check (SFTP + Mongo)
+
+on:
+  schedule:
+    - cron: '0 23 * * 0'
+  workflow_dispatch: {}
+
+jobs:
+  services-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run SFTP + Mongo checks
+        env:
+          ATLAS_URI: ${{ secrets.ATLAS_URI }}
+          SFTP_HOSTNAME: ${{ secrets.SFTP_HOSTNAME }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+        run: node backend/scripts/check_services.js
